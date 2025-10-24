@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jigsaw Acertijos Matemáticos</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #ff0000;
+            font-family: 'Courier New', Courier, monospace;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            font-size: 3em;
+            text-shadow: 0 0 10px #ff0000;
+        }
+        .riddle {
+            display: none;
+            font-size: 1.5em;
+            margin: 20px 0;
+        }
+        input {
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #ff0000;
+            padding: 10px;
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #ff0000;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #cc0000;
+        }
+        #scare-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #scare-image {
+            max-width: 80%;
+            max-height: 80%;
+        }
+        #background-image {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('assets/images/background.jpeg');
+            background-size: cover;
+            opacity: 0.3;
+            z-index: -1;
+        }
+        #start-button {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            padding: 20px 40px;
+            background-color: #ff0000;
+            color: #000;
+            border: none;
+            cursor: pointer;
+        }
+        #start-button:hover {
+            background-color: #cc0000;
+        }
+    </style>
+</head>
+<body>
+    <button id="start-button" onclick="startGame()">Iniciar Juego</button>
+    <div id="background-image"></div>
+    <div class="container" style="display: none;">
+        <h1>Jigsaw: Acertijos Matemáticos</h1>
+        <div id="riddle-1" class="riddle">
+            <p>Acertijo 1: ¿Cuánto es 2 + 2?</p>
+            <input type="text" id="answer-1">
+            <button onclick="checkAnswer(1)">Responder</button>
+        </div>
+        <div id="riddle-2" class="riddle">
+            <p>Acertijo 2: ¿Cuánto es 5 x 3?</p>
+            <input type="text" id="answer-2">
+            <button onclick="checkAnswer(2)">Responder</button>
+        </div>
+        <div id="riddle-3" class="riddle">
+            <p>Acertijo 3: ¿Cuánto es 10 - 4?</p>
+            <input type="text" id="answer-3">
+            <button onclick="checkAnswer(3)">Responder</button>
+        </div>
+        <div id="riddle-4" class="riddle">
+            <p>Acertijo 4: ¿Cuánto es 20 / 5?</p>
+            <input type="text" id="answer-4">
+            <button onclick="checkAnswer(4)">Responder</button>
+        </div>
+        <div id="riddle-5" class="riddle">
+            <p>Acertijo 5: ¿Cuánto es la raíz cuadrada de 25?</p>
+            <input type="text" id="answer-5">
+            <button onclick="checkAnswer(5)">Responder</button>
+        </div>
+    </div>
+
+    <div id="scare-overlay" onclick="hideScare()">
+        <img id="scare-image" src="assets/images/scare.jpeg" alt="Imagen de miedo">
+    </div>
+
+    <!-- Audios -->
+    <audio id="background-music" src="assets/audio/background.mp3" loop preload="auto"></audio>
+    <audio id="welcome-audio" src="assets/audio/welcome.mp3" preload="auto"></audio>
+    <audio id="riddle-1-audio" src="assets/audio/riddle1.mp3" preload="auto"></audio>
+    <audio id="riddle-2-audio" src="assets/audio/riddle2.mp3" preload="auto"></audio>
+    <audio id="riddle-3-audio" src="assets/audio/riddle3.mp3" preload="auto"></audio>
+    <audio id="riddle-4-audio" src="assets/audio/riddle4.mp3" preload="auto"></audio>
+    <audio id="riddle-5-audio" src="assets/audio/riddle5.mp3" preload="auto"></audio>
+    <audio id="error-audio" src="assets/audio/error.mp3" preload="auto"></audio>
+    <audio id="success-audio" src="assets/audio/success.mp3" preload="auto"></audio>
+
+    <script>
+        const answers = {
+            1: '4',
+            2: '15',
+            3: '6',
+            4: '4',
+            5: '5'
+        };
+        let currentRiddle = 1;
+
+        function startGame() {
+            // Ocultar botón de inicio
+            document.getElementById('start-button').style.display = 'none';
+            // Mostrar contenido del juego
+            document.querySelector('.container').style.display = 'block';
+            
+            // Iniciar música de fondo
+            const bgMusic = document.getElementById('background-music');
+            bgMusic.volume = 0.5; // Ajustar volumen
+            bgMusic.play().catch(e => console.error('Error al reproducir música de fondo:', e));
+
+            // Reproducir sonido de bienvenida y luego acertijo 1
+            const welcomeAudio = document.getElementById('welcome-audio');
+            welcomeAudio.volume = 0.8;
+            welcomeAudio.play().then(() => {
+                welcomeAudio.onended = () => showRiddle(1);
+            }).catch(e => {
+                console.error('Error al reproducir bienvenida:', e);
+                showRiddle(1); // Continuar aunque falle el audio
+            });
+        }
+
+        function showRiddle(num) {
+            document.getElementById(`riddle-${num}`).style.display = 'block';
+            const audio = document.getElementById(`riddle-${num}-audio`);
+            audio.volume = 0.8;
+            audio.play().catch(e => console.error(`Error al reproducir audio del acertijo ${num}:`, e));
+        }
+
+        function checkAnswer(num) {
+            const input = document.getElementById(`answer-${num}`);
+            if (input.value.trim().toLowerCase() === answers[num]) {
+                document.getElementById(`riddle-${num}`).style.display = 'none';
+                currentRiddle++;
+                if (currentRiddle <= 5) {
+                    showRiddle(currentRiddle);
+                } else {
+                    completeGame();
+                }
+            } else {
+                showScare();
+            }
+        }
+
+        function showScare() {
+            const errorAudio = document.getElementById('error-audio');
+            errorAudio.volume = 0.8;
+            errorAudio.play().catch(e => console.error('Error al reproducir audio de error:', e));
+            document.getElementById('scare-overlay').style.display = 'flex';
+        }
+
+        function hideScare() {
+            document.getElementById('scare-overlay').style.display = 'none';
+        }
+
+        function completeGame() {
+            const successAudio = document.getElementById('success-audio');
+            successAudio.volume = 0.8;
+            successAudio.play().catch(e => console.error('Error al reproducir audio de éxito:', e));
+            localStorage.setItem('maskOn', 'true');
+            alert('¡Has completado los acertijos! La máscara se encenderá.');
+        }
+    </script>
+</body>
+</html>
